@@ -1,0 +1,99 @@
+name: Build and Release
+
+permissions:
+    contents: write
+
+on:
+    release:
+        types: [published]
+
+jobs:
+    build:
+        runs-on: macos-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Select Xcode
+              shell: bash
+              run: sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+
+            - name: Build App
+              shell: bash
+              run: |
+                xcodebuild \
+                  -project BatteryBuddyReborn.xcodeproj \
+                  -scheme BatteryBuddyReborn \
+                  -configuration Release \
+                  -destination 'platform=macOS' \
+                  -derivedDataPath .build/DerivedData \
+                  CODE_SIGNING_ALLOWED=NO \
+                  CODE_SIGNING_REQUIRED=NO \
+                  build
+
+            - name: Package App
+              shell: bash
+              run: |
+                mkdir -p release
+                mkdir -p dmg-root
+                cp -R ".build/DerivedData/Build/Products/Release/BatteryBuddyReborn.app" dmg-root/
+                hdiutil create \
+                  -volname "BatteryBuddyReborn" \
+                  -srcfolder dmg-root \
+                  -ov \
+                  -format UDZO \
+                  "release/BatteryBuddyReborn-macOS.dmg"
+
+            - name: Upload App
+              uses: actions/upload-artifact@v4
+              with:
+                name: macos-app
+                path: release/BatteryBuddyReborn-macOS.dmg
+
+    release:
+        needs: build
+        runs-on: macos-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Download App
+              uses: actions/download-artifact@v4
+              with:
+                path: release
+                merge-multiple: true
+
+            - name: Generate Checksums
+              id: metadata
+              shell: bash
+              run: |
+                for pkg in release/*.dmg; do
+                  if [ -f "$pkg" ]; then
+                    echo "### macOS App" >> release_body.md
+                    echo "* MD5: $(md5 -q "$pkg")" >> release_body.md
+                    echo "* SHA1: $(shasum -a 1 "$pkg" | awk '{ print $1 }')" >> release_body.md
+                    echo "* SHA256: $(shasum -a 256 "$pkg" | awk '{ print $1 }')" >> release_body.md
+                    echo "" >> release_body.md
+                    shasum -a 256 "$pkg" > "$pkg.sha256"
+                    break
+                  fi
+                done
+
+            - name: Create GitHub Release
+              uses: softprops/action-gh-release@v2
+              env:
+                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              with:
+                tag_name: ${{ github.event.release.tag_name }}
+                name: ${{ github.event.repository.name }}
+                body_path: release_body.md
+                files: |
+                  release/BatteryBuddyReborn-macOS.dmg
+                  release/BatteryBuddyReborn-macOS.dmg.sha256
+                draft: false
+                prerelease: false
+                make_latest: true
+
+            - name: Delete build artifacts
+              uses: geekyeggo/delete-artifact@v5
+              with:
+                name: macos-app
+                failOnError: false
