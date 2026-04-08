@@ -1,0 +1,20 @@
+# macOS
+.DS_Store
+
+# Xcode user data
+xcuserdata/
+*.xcuserstate
+
+# Local build artifacts
+.derivedData/
+DerivedData/
+build/
+
+# SwiftPM / package caches
+.build/
+.swiftpm/
+
+# XCTest / profiling artifacts
+*.xccrashpoint
+*.xcresult
+*.trace
