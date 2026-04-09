@@ -16,12 +16,26 @@ protocol AboutPresenting {
 final class StandardAboutPresenter: AboutPresenting {
     func presentAboutPanel() {
         NSApp.orderFrontStandardAboutPanel([
-            NSApplication.AboutPanelOptionKey.applicationVersion: Bundle.main
-                .infoDictionary?["CFBundleShortVersionString"] as? String
-                ?? "1.0.3",
-            NSApplication.AboutPanelOptionKey.version: Bundle.main
-                .infoDictionary?["CFBundleVersion"] as? String ?? "11",
+            NSApplication.AboutPanelOptionKey.applicationVersion: bundleValue(
+                for: "CFBundleShortVersionString"
+            ),
+            NSApplication.AboutPanelOptionKey.version: bundleValue(
+                for: "CFBundleVersion"
+            ),
         ])
         NSApp.activate(ignoringOtherApps: true)
+    }
+
+    private func bundleValue(for key: String) -> String {
+        guard
+            let value = Bundle.main.object(forInfoDictionaryKey: key) as? String
+        else {
+            return "Unknown"
+        }
+
+        let trimmedValue = value.trimmingCharacters(
+            in: .whitespacesAndNewlines
+        )
+        return trimmedValue.isEmpty ? "Unknown" : trimmedValue
     }
 }
