@@ -5,31 +5,48 @@
 //  Created by waru on 4/8/26.
 //
 
-import Combine
 import Foundation
+import OSLog
 import ServiceManagement
 
+struct LaunchAtLoginRegistrationResult {
+    let succeeded: Bool
+    let errorMessage: String?
+
+    static let success = LaunchAtLoginRegistrationResult(
+        succeeded: true,
+        errorMessage: nil
+    )
+}
+
 protocol LaunchAtLoginManaging {
-    func ensureRegistered()
+    func ensureRegistered() -> LaunchAtLoginRegistrationResult
 }
 
 @MainActor
-final class ServiceManagementLaunchAtLoginManager: ObservableObject,
-    LaunchAtLoginManaging
-{
-    @Published private(set) var lastErrorMessage: String?
+final class ServiceManagementLaunchAtLoginManager: LaunchAtLoginManaging {
+    private let logger = Logger(
+        subsystem: Bundle.main.bundleIdentifier ?? "BatteryBuddyReborn",
+        category: "LaunchAtLogin"
+    )
 
-    func ensureRegistered() {
+    func ensureRegistered() -> LaunchAtLoginRegistrationResult {
         guard SMAppService.mainApp.status != .enabled else {
-            lastErrorMessage = nil
-            return
+            return .success
         }
 
         do {
             try SMAppService.mainApp.register()
-            lastErrorMessage = nil
+            return .success
         } catch {
-            lastErrorMessage = error.localizedDescription
+            let message = error.localizedDescription
+            logger.error(
+                "Failed to register launch at login: \(message, privacy: .public)"
+            )
+            return LaunchAtLoginRegistrationResult(
+                succeeded: false,
+                errorMessage: message
+            )
         }
     }
 }
