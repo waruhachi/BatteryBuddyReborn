@@ -161,7 +161,7 @@ final class IOKitBatteryMonitor: ObservableObject, BatteryMonitoring {
             }
 
             if powerSourceStateRaw == kIOPSACPowerValue {
-                return .charging
+                return .pluggedIn
             }
 
             return .unknown
@@ -169,7 +169,7 @@ final class IOKitBatteryMonitor: ObservableObject, BatteryMonitoring {
 
         return BatterySnapshot(
             chargePercent: percentage,
-            isCharging: isCharging || isCharged,
+            isCharging: isCharging,
             isLowPowerMode: ProcessInfo.processInfo.isLowPowerModeEnabled,
             hasInternalBattery: true,
             powerSourceState: powerSourceState,

@@ -48,6 +48,8 @@ struct BatteryStatusFormatter: BatteryStatusFormatting {
             return "Charging"
         case .charged:
             return "Fully charged"
+        case .pluggedIn:
+            return "Plugged in"
         case .battery:
             if let minutesToEmpty = snapshot.minutesToEmpty {
                 return "\(format(minutes: minutesToEmpty)) remaining"

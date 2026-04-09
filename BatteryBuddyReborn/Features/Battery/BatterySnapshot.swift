@@ -10,6 +10,7 @@ import Foundation
 struct BatterySnapshot: Equatable {
     enum PowerSourceState: String, Equatable {
         case battery
+        case pluggedIn
         case charging
         case charged
         case unknown
@@ -71,7 +72,7 @@ struct BuddyAppearance: Equatable {
         switch snapshot.powerSourceState {
         case .charging:
             plugAssetName = "PlugCharging"
-        case .charged:
+        case .charged, .pluggedIn:
             plugAssetName = "PlugNotCharging"
         case .battery, .unknown:
             plugAssetName = nil
